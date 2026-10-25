@@ -1,0 +1,16 @@
+{
+  "server": {
+    "model": "E:\\AI\\LLM\\gguf\\Qwen3.8-Flash-Next-GGUF\\basalt\\Qwen3.8-FN-UD-IQ4_XS.basalt",
+    "alias": "qwen3.8-flash-next-unsloth-ud-iq4_xs",
+    "host": "0.0.0.0",
+    "gpu": "0",
+    "vision": "dynamic"
+  },
+  "engine": {
+    "max-context": 262144,
+    "kv": "int8",
+    "vram-reserve-mib": 1536,
+    "conversation-cache-mib": 16384,
+    "conversation-cache-slots": 4
+  }
+}

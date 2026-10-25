@@ -1,0 +1,5 @@
+# Local scratch directory for agent-generated artifacts and benchmark results.
+.tmp/
+
+# Python's byte code of the benchmark tools.
+__pycache__/

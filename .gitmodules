@@ -1,0 +1,3 @@
+[submodule "vendor/basalt"]
+	path = vendor/basalt
+	url = https://github.com/jesdga95/basalt.git
