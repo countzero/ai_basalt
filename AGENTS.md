@@ -18,7 +18,7 @@ one stays on ai_strata.
 - `"host": "0.0.0.0"` without an API key is deliberate: other devices use the server, and
   Basalt only warns about the missing key. Do not narrow the host, and do not add a key.
 - `alias` keeps the model name of the matching ai_strata tier, so clients work with either server.
-- `port` stays out: `start.ps1` sets it (default 8083, as in ai_strata). Basalt stops at startup
+- `port` stays out: `start.ps1` sets it (default 8084, next to ai_strata's 8083). Basalt stops at startup
   on an unknown key or a key in the wrong block, so check a new key against
   `vendor/basalt/docs/configuration/index.md` before adding it.
 - Change a value only with a `benchmark.ps1` run before and after, on the same Basalt commit.
@@ -33,7 +33,7 @@ one stays on ai_strata.
 - Never run `basalt-bench --community`: it appends to `vendor/basalt/docs/community/benchmarks.json`.
   `basalt-bench` and `basalt-probe` load the model themselves and need the GPU free.
 - The running server is the user's, and other clients depend on it: never stop or restart it,
-  nor the Strata server on the same port, without asking.
+  nor ai_strata's server on port 8083, without asking.
 
 ## Benchmark
 

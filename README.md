@@ -16,9 +16,9 @@ pwsh -NoExit -File <repo>\start.ps1
 
 `<repo>` is where you cloned this repository. With several tier files, name one with
 `-tier <tier>`. `start.ps1` checks that the engine is built, that the tier file's model exists and
-that port 8083 is free; it never stops another server on it. Port 8083 is the one ai_strata uses, and each tier
-file reports the model name of the matching ai_strata tier (`alias`), so clients work with either
-server. Only one of the two runs at a time. A tier file sets `"host": "0.0.0.0"`, so every device
+that port 8084 is free; it never stops another server on it. ai_strata keeps port 8083, and each
+tier file reports the model name of the matching ai_strata tier (`alias`), so a client switches
+servers by its port alone. A tier file sets `"host": "0.0.0.0"`, so every device
 on the network can use the server. A tier file sets no API key: clients need none, and the server
 warns about it once at start.
 

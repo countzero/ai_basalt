@@ -44,7 +44,7 @@ Shows the manual on how to use this script.
 [CmdletBinding(PositionalBinding = $false)]
 Param (
     [String]
-    $url = "http://127.0.0.1:8083",
+    $url = "http://127.0.0.1:8084",
 
     [String]
     $compare,
