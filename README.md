@@ -29,12 +29,12 @@ into `tools\strata`) against a running server. The Strata rows are ai_strata's o
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `8d73a394` | 35.7 tok/s  | 3263 tok/s | 58.7 tok/s   | 70.9 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `b6125f60` | 76.0 tok/s  | 3433 tok/s | 93.1 tok/s   | 71.1 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.4.2   | 73.6 tok/s  | 2555 tok/s | 50.0 tok/s   | 69.5 %          |
 
-The Basalt row is one run without *Lock pages in memory*. Its chat decode is split: the first of
-the three runs decoded at 59-78 tok/s, the next two at 31-38 tok/s, so the median lands on the slow
-half. The cause is not known yet. A Strata run of the same day gave 73.2 tok/s chat decode,
+The Basalt row is one run without *Lock pages in memory*; its nine chat samples decoded at
+70.5-79.6 tok/s. At `8d73a394` the chat decode was split between fast and slow runs, with medians
+of 35.7 tok/s chat decode, 3263 tok/s 16K prompt and 58.7 tok/s agent decode. A Strata run of the same day gave 73.2 tok/s chat decode,
 2568 tok/s 16K prompt and 46.2 tok/s agent decode.
 
 ## New machine
