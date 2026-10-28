@@ -18,6 +18,9 @@ The server is neither started nor stopped: start it as README.md -> Usage says.
 .PARAMETER url
 The address of the running server.
 
+.PARAMETER out
+The folder to write the results to, instead of .tmp/bench/basalt-<commit>/.
+
 .PARAMETER compare
 An earlier results folder to print beside this run, for example
 .tmp\bench\basalt-8d73a39477690. A folder that holds several runs uses the
@@ -45,6 +48,9 @@ Shows the manual on how to use this script.
 Param (
     [String]
     $url = "http://127.0.0.1:8084",
+
+    [String]
+    $out,
 
     [String]
     $compare,
@@ -120,7 +126,11 @@ if ($health.service -ne "basalt") {
 
 $model = @($models.data.id)[0]
 $commit = git -C $basaltPath rev-parse --short=12 HEAD
-$outPath = Join-Path $PSScriptRoot ".tmp\bench\basalt-${commit}"
+$outPath = if ($out) {
+    [System.IO.Path]::GetFullPath($out, (Get-Location).Path)
+} else {
+    Join-Path $PSScriptRoot ".tmp\bench\basalt-${commit}"
+}
 
 New-Item -Path $outPath -ItemType "directory" -Force | Out-Null
 

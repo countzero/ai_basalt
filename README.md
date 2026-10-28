@@ -30,12 +30,29 @@ is ai_strata's on the same machine.
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `71116cc3` | 74.4 tok/s  | 3435 tok/s | 98.4 tok/s   | 70.9 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `71116cc3` | 78.1 tok/s  | 3438 tok/s | 118.3 tok/s  | 70.9 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.4.2   | 73.6 tok/s  | 2555 tok/s | 50.0 tok/s   | 69.5 %          |
 
-The Basalt row ran on driver 597.30. Four runs of the same day gave 71.1-75.1 tok/s chat decode,
-3387-3435 tok/s 16K prompt and 84.4-98.4 tok/s agent decode. The first prompt after start reads at
-about 2090 tok/s. Agent decode varies by turn, from about 50 to over 150 tok/s within one run.
+The Basalt row ran on driver 597.30 through `.\experiment.ps1`. Before `ple-io` and
+`pool-affinity` were added, the four baselines of the same day gave 71.1-75.1 tok/s chat decode,
+3387-3435 tok/s 16K prompt and 84.4-98.4 tok/s agent decode. Without `"ple-io": "ram"` the first
+prompt after start reads at about 2090 tok/s. Agent decode varies by turn, from about 50 to over
+170 tok/s within one run.
+
+## Try other engine settings
+
+`.\experiment.ps1` measures the tier with changed engine settings, one arm at a time: the tier as
+it is (first and last), `ple-io ram`, `pool-affinity p-cores`, `vram-reserve-mib 700`,
+`kv-resident 32768`, and `custom` with the settings given as `-custom @{ "name" = value }`. It
+starts each arm from a throwaway config under `.tmp\bench\experiment-<date>\` on `127.0.0.1` in a
+hidden window, and stops it afterwards. It refuses to start while port 8084 is taken or another
+program uses the GPU, and never stops a server it did not start. `-check` only writes and checks
+the configs; `-arms baseline,pleram` runs a part. `summary.md` in the run folder holds the table.
+
+`vram-reserve-mib 700` and `kv-resident` gave no clear gain, and both change which experts the GPU
+rounds. `relaxed-drafting 0.5` (`basalt-bench`, sampled fixtures, two runs each) raised draft
+acceptance by up to 4 points but decode speed only within the noise. It changes the sampled
+output, so the tier leaves it off.
 
 ## New machine
 
@@ -48,9 +65,10 @@ its `bin\x64` on the PATH, Python 3.10 or newer, and PowerShell 7.
    a long time). The build records the checkout's path: after moving `<repo>`, run it again.
 3. Build the model pack as *Model pack* says, and copy the nearest tier file to a new tier name.
 4. Optional, needs administrator rights: grant your account *Lock pages in memory*
-   (`secpol.msc` -> *Local Policies* -> *User Rights Assignment*), then sign out and in. The engine
-   then keeps its pinned memory in large pages instead of falling back to 4 KiB pages. Strata uses
-   the privilege too.
+   (`secpol.msc` -> *Local Policies* -> *User Rights Assignment*), then sign out and in. No account
+   holds it by default. It does not give this tier large pages: the experts it keeps in RAM are
+   ordinary memory registered with the driver, which stays in 4 KiB pages. Strata uses the
+   privilege.
 
 ## Model pack
 
