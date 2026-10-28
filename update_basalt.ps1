@@ -17,6 +17,10 @@ toolchain) is checked before anything is changed. A failed build puts the old
 commit and the old bin\ back. Nothing is committed, and the server is neither
 started nor stopped.
 
+The build shows one progress line with the time left, which Ninja predicts
+from the step times of the previous build. The compilers' output, warnings
+included, goes to .tmp\build\basalt-<commit>.log; only errors are shown.
+
 .PARAMETER commit
 A commit of upstream's main, or "main" for its newest commit.
 Defaults to the newest commit of main whose "ci" workflow passed.
@@ -232,16 +236,77 @@ try {
     # environment never leaks into the calling shell.
     $parallel = if ($jobs -gt 0) { "--parallel ${jobs}" } else { "" }
 
+    # Ninja's status: finished/total steps, elapsed time, time left (%W, "?"
+    # until it can predict). Ninja 1.12 predicts from the step times of the
+    # previous build in build\.ninja_log.
     Set-Content -Path $buildScript -Encoding "ascii" -Value @"
 @echo off
+set "NINJA_STATUS=@%%f/%%t %%w %%W@ "
 call "${vcvars}" >nul || exit /b 1
-"${cmake}" -S "${basaltPath}" -B "${buildPath}" -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=${ninja}" || exit /b 1
-"${cmake}" --build "${buildPath}" ${parallel} || exit /b 1
+"${cmake}" -S "${basaltPath}" -B "${buildPath}" -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=${ninja}" 2>&1 || exit /b 1
+"${cmake}" --build "${buildPath}" ${parallel} 2>&1 || exit /b 1
 "@
+
+    $logPath = Join-Path $PSScriptRoot ".tmp\build\basalt-${newShort}.log"
+    New-Item -Path (Split-Path -Path $logPath) -ItemType "directory" -Force | Out-Null
 
     Write-Host "[Build] Configuring and building (the first build takes a long time)..." -ForegroundColor "Yellow"
 
-    Invoke-Checked "The build" { & cmd.exe /d /c $buildScript }
+    # Basalt's own code builds with /W4 and prints hundreds of warnings, and
+    # nvcc's host compiler echoes every file name. All of it goes to the log;
+    # the console shows one progress line and the errors: a failed step's
+    # output up to the next status line, CMake's errors and Ninja's messages.
+    $log = [System.IO.StreamWriter]::new($logPath, $false, [System.Text.UTF8Encoding]::new($false))
+    $warnings = 0
+    $echo = $false
+    $shown = 0
+
+    try {
+        & cmd.exe /d /c $buildScript | ForEach-Object {
+            $log.WriteLine($_)
+            $status = [regex]::Match($_, '^@(\d+)/(\d+) (\S+) (\S+)@ ')
+
+            if ($status.Success) {
+                $echo = $false
+                $left = if ($status.Groups[4].Value -eq "?") { "" } else { ", about $($status.Groups[4].Value) left" }
+                $line = "[Build] $($status.Groups[1].Value)/$($status.Groups[2].Value) steps, $($status.Groups[3].Value) elapsed${left}"
+                Write-Host -NoNewline ("`r" + $line.PadRight($shown)) -ForegroundColor "DarkYellow"
+                $shown = $line.Length
+                return
+            }
+
+            if ($_ -match ': warning ') {
+                $warnings++
+            }
+
+            if ($_ -match '^(FAILED: |CMake Error)') {
+                $echo = $true
+            }
+
+            if ($echo -or $_ -match '^ninja: ') {
+                if ($shown) {
+                    Write-Host ""
+                    $shown = 0
+                }
+                Write-Host $_
+            }
+        }
+        $buildExitCode = $LASTEXITCODE
+    } finally {
+        $log.Dispose()
+
+        if ($shown) {
+            Write-Host ""
+        }
+    }
+
+    $logName = [System.IO.Path]::GetRelativePath($PSScriptRoot, $logPath)
+
+    if ($buildExitCode -ne 0) {
+        throw "The build failed with exit code ${buildExitCode}. Its full output: ${logName}"
+    }
+
+    Write-Host "[Build] Done, ${warnings} warning lines in ${logName}." -ForegroundColor "DarkYellow"
 
     foreach ($binary in $binaries) {
         if (-not (Test-Path -Path (Join-Path $binPath $binary))) {

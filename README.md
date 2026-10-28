@@ -83,8 +83,10 @@ ai_strata's.
 2. `.\update_basalt.ps1`, or `.\update_basalt.ps1 -commit <sha|main>`. Without `-commit` it takes
    the newest commit of upstream's `main` whose `ci` run passed. It checks out the commit in
    `vendor\basalt`, installs Basalt's Python packages and builds the engine (the old `bin\` goes to
-   `build\bin.previous\`). Read the changes it links: upstream renames and removes settings, and an
-   unknown key in a tier file stops the server.
+   `build\bin.previous\`). The build shows one progress line with the time left, predicted from
+   the previous build's step times, and only errors; the full compiler output, warnings included,
+   goes to `.tmp\build\basalt-<commit>.log`. Read the changes it links: upstream renames and
+   removes settings, and an unknown key in a tier file stops the server.
 3. Start, check that the model loads, and run `.\benchmark.ps1`. It writes to
    `.tmp\bench\basalt-<commit>\` and prints the numbers for *Tiers*; `-compare .tmp\bench\<older
    folder>` puts an earlier run beside it, also one of ai_strata. VRAM taken by other programs
