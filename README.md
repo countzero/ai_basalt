@@ -24,18 +24,18 @@ warns about it once at start.
 
 ## Tiers
 
-Medians of `.\benchmark.ps1` (Strata's `tools\strata_bench.py`, default suite, 3 runs each, copied
-into `tools\strata`) against a running server. The Strata rows are ai_strata's on the same machine.
+Medians of `.\benchmark.ps1` (Strata's `tools\strata_bench.py`, default suite, copied into
+`tools\strata`) against a running server: 5 runs for the Basalt row, 3 for the Strata row, which
+is ai_strata's on the same machine.
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `b6125f60` | 76.0 tok/s  | 3433 tok/s | 93.1 tok/s   | 71.1 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `71116cc3` | 74.4 tok/s  | 3435 tok/s | 98.4 tok/s   | 70.9 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.4.2   | 73.6 tok/s  | 2555 tok/s | 50.0 tok/s   | 69.5 %          |
 
-The Basalt row is one run without *Lock pages in memory*; its nine chat samples decoded at
-70.5-79.6 tok/s. At `8d73a394` the chat decode was split between fast and slow runs, with medians
-of 35.7 tok/s chat decode, 3263 tok/s 16K prompt and 58.7 tok/s agent decode. A Strata run of the same day gave 73.2 tok/s chat decode,
-2568 tok/s 16K prompt and 46.2 tok/s agent decode.
+The Basalt row ran on driver 597.30. Four runs of the same day gave 71.1-75.1 tok/s chat decode,
+3387-3435 tok/s 16K prompt and 84.4-98.4 tok/s agent decode. The first prompt after start reads at
+about 2090 tok/s. Agent decode varies by turn, from about 50 to over 150 tok/s within one run.
 
 ## New machine
 
