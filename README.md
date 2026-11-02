@@ -24,20 +24,23 @@ warns about it once at start.
 
 ## Tiers
 
-Medians of `.\benchmark.ps1` (Strata's `tools\strata_bench.py`, default suite, copied into
-`tools\strata`) against a running server: 5 runs for the Basalt row, 3 for the Strata row, which
-is ai_strata's on the same machine.
+Medians of Strata's `tools\strata_bench.py` (default suite, copied into `tools\strata`) against a
+running server, 3 runs per row: Basalt through `.\benchmark.ps1`, Strata through ai_strata's, one
+server at a time.
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `71116cc3` | 78.1 tok/s  | 3438 tok/s | 118.3 tok/s  | 70.9 %          |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.4.2   | 73.6 tok/s  | 2555 tok/s | 50.0 tok/s   | 69.5 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a04edb96` | 77.5 tok/s  | 3307 tok/s | 99.3 tok/s   | 71.1 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.9     | 74.7 tok/s  | 2780 tok/s | 84.4 tok/s   | 69.1 %          |
 
-The Basalt row ran on driver 597.30 through `.\experiment.ps1`. Before `ple-io` and
-`pool-affinity` were added, the four baselines of the same day gave 71.1-75.1 tok/s chat decode,
-3387-3435 tok/s 16K prompt and 84.4-98.4 tok/s agent decode. Without `"ple-io": "ram"` the first
-prompt after start reads at about 2090 tok/s. Agent decode varies by turn, from about 50 to over
-170 tok/s within one run.
+Both rows ran on driver 597.30, on the migrated version 2 pack, one server at a time. The
+`71116cc3` row they replace gave 78.1 tok/s chat decode, 3438 tok/s 16K prompt, 118.3 tok/s agent
+decode and 70.9 % cache hit through `.\experiment.ps1`, the `v0.2.4.2` row of Strata 73.6, 2555,
+50.0 and 69.5. Chat decode stays within the same day's baseline spread of 71.1-75.1 tok/s, agent
+decode within 84.4-98.4 tok/s, and 16K prompt reads 4 % lower: it was not re-measured on `71116cc3`
+in the same session, so that is not called a regression. Without `"ple-io": "ram"` the first prompt after
+start reads at about 2090 tok/s. Agent decode varies by turn, from about 50 to over 170 tok/s
+within one run.
 
 ## Try other engine settings
 
@@ -81,19 +84,21 @@ ai_strata's.
 
    ```
    hf download jesdga/Qwen3.8-Flash-Next-Basalt --include "convert/mtp/*" --local-dir <models>\basalt
-   hf download jesdga/Qwen3.8-Flash-Next-Basalt convert/draft_vocab.bin convert/profile.bin --local-dir <models>\basalt
+   hf download jesdga/Qwen3.8-Flash-Next-Basalt convert/draft_vocab.bin --local-dir <models>\basalt
    ```
 
 2. Convert (90.3 GiB, about 12 minutes). In `vendor\basalt`:
 
    ```
-   .\.venv\Scripts\python.exe tools\convert\convert.py --gguf <models>\UD-IQ4_XS\Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --mmproj <models>\mmproj-BF16.gguf --mtp-source <models>\basalt\convert\mtp --mtp-dense <models>\basalt\convert\mtp\rt\dense.bin --draft-vocab <models>\basalt\convert\draft_vocab.bin --profile <models>\basalt\convert\profile.bin --compat-bf16 --name "Qwen3.8-Flash-Next UD-IQ4_XS" --out <models>\basalt\Qwen3.8-FN-UD-IQ4_XS.basalt
+   .\.venv\Scripts\python.exe tools\convert\convert.py --gguf <models>\UD-IQ4_XS\Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --mmproj <models>\mmproj-BF16.gguf --mtp-source <models>\basalt\convert\mtp --mtp-dense <models>\basalt\convert\mtp\rt\dense.bin --draft-vocab <models>\basalt\convert\draft_vocab.bin --compat-bf16 --name "Qwen3.8-Flash-Next UD-IQ4_XS" --out <models>\basalt\Qwen3.8-FN-UD-IQ4_XS.basalt
    ```
 
    `--compat-bf16` converts the hyper-connection matrices, which the GGUF stores as Q8_0, to the
-   BF16 the engine reads. The converter warns that a pack built this way is slower than the official
-   ones: it lacks the official 8-bit hyper-connection copies, which the engine then makes at every
-   start.
+   BF16 the engine reads, and the converter writes the pack's `hc8` section from them: the table the
+   engine used to compute at every start. The converter still warns that a self-converted pack is
+   slower than an official one, which it says of a pack without the official drafter; this one
+   copies it. The expert profile is no longer a converter input: the engine ships it as
+   `data\profiles\qwen4exp-48x512.prof`.
 
 ## Update Basalt
 
@@ -105,7 +110,10 @@ ai_strata's.
    the previous build's step times, and only errors; the full compiler output, warnings included,
    goes to `.tmp\build\basalt-<commit>.log`. Read the changes it links: upstream renames and
    removes settings, and an unknown key in a tier file stops the server.
-3. Start, check that the model loads, and run `.\benchmark.ps1`. It writes to
+3. Start, check that the model loads, and run `.\benchmark.ps1`. A start that refuses the pack's
+   `.basalt` version names its migration in `vendor\basalt\tools\migrations\`: migrate the pack,
+   do not re-convert it, and keep room for a second copy of the file; the weights are copied byte
+   for byte. It writes to
    `.tmp\bench\basalt-<commit>\` and prints the numbers for *Tiers*; `-compare .tmp\bench\<older
    folder>` puts an earlier run beside it, also one of ai_strata. VRAM taken by other programs
    lowers the numbers: when they differ from the old row, run the old commit in the same session
