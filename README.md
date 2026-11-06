@@ -20,7 +20,9 @@ that port 8084 is free; it never stops another server on it. ai_strata keeps por
 tier file reports the model name of the matching ai_strata tier (`alias`), so a client switches
 servers by its port alone. A tier file sets `"host": "0.0.0.0"`, so every device
 on the network can use the server. A tier file sets no API key: clients need none, and the server
-warns about it once at start.
+warns about it once at start. Images from other devices must come as base64 `data:` URLs; an image
+URL or file path from them gets a 400 unless its host is listed in `image-url-host` or its folder
+in `image-dir`, which the tier files leave unset.
 
 ## Tiers
 
@@ -30,17 +32,17 @@ server at a time.
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a04edb96` | 77.5 tok/s  | 3307 tok/s | 99.3 tok/s   | 71.1 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `1b3f6964` | 76.0 tok/s  | 3365 tok/s | 107.2 tok/s  | 71.1 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.9     | 74.7 tok/s  | 2780 tok/s | 84.4 tok/s   | 69.1 %          |
 
 Both rows ran on driver 597.30, on the migrated version 2 pack, one server at a time. The
-`71116cc3` row they replace gave 78.1 tok/s chat decode, 3438 tok/s 16K prompt, 118.3 tok/s agent
-decode and 70.9 % cache hit through `.\experiment.ps1`, the `v0.2.4.2` row of Strata 73.6, 2555,
-50.0 and 69.5. Chat decode stays within the same day's baseline spread of 71.1-75.1 tok/s, agent
-decode within 84.4-98.4 tok/s, and 16K prompt reads 4 % lower: it was not re-measured on `71116cc3`
-in the same session, so that is not called a regression. Without `"ple-io": "ram"` the first prompt after
-start reads at about 2090 tok/s. Agent decode varies by turn, from about 50 to over 170 tok/s
-within one run.
+`a04edb96` row it replaces gave 77.5 tok/s chat decode, 3307 tok/s 16K prompt, 99.3 tok/s agent
+decode and 71.1 % cache hit. The change is within the noise: chat decode spans 72.2-78.7 tok/s
+over the requests of this row and 73.8-82.0 tok/s on `a04edb96`, whose second run the same day
+gave a median of 70.8 tok/s; agent decode spans 88.5-133.3 tok/s against 74.7-135.7 tok/s, and
+16K prompt reads 2 % higher, which is not called a gain. Without `"ple-io": "ram"` the first
+prompt after start reads at about 2090 tok/s. Agent decode varies by turn and by run: the medians
+of this row's three runs span 96.5-121.7 tok/s.
 
 ## Try other engine settings
 
