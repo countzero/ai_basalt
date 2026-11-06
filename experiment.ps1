@@ -129,8 +129,12 @@ function New-ArmConfig {
     $config = Get-Content -Raw -Path $tierPath | ConvertFrom-Json
     $settings = $armSettings[$arm]
 
+    $entry = @($config.models)[0]
+
+    # A model entry's own value wins over the top-level engine block.
     foreach ($name in $settings.Keys) {
-        $config.engine | Add-Member -NotePropertyName $name -NotePropertyValue $settings[$name] -Force
+        $block = if ($entry.PSObject.Properties.Name -contains $name) { $entry } else { $config.engine }
+        $block | Add-Member -NotePropertyName $name -NotePropertyValue $settings[$name] -Force
     }
 
     $config.server | Add-Member -NotePropertyName "host" -NotePropertyValue "127.0.0.1" -Force
@@ -145,8 +149,10 @@ function Test-ArmConfig {
 
     $config = Get-Content -Raw -Path $configPath | ConvertFrom-Json
 
-    if (-not (Test-Path -Path $config.server.model)) {
-        throw "${configPath} names a model that does not exist: $($config.server.model)"
+    $model = @($config.models)[0].model
+
+    if (-not $model -or -not (Test-Path -Path $model)) {
+        throw "${configPath} names a model that does not exist: ${model}"
     }
 
     # Basalt would stop at startup on an engine flag its binary does not know.
@@ -421,7 +427,7 @@ if (($arms -contains "custom") -and !$custom.Count) {
     throw "The arm custom needs its engine settings: -custom @{ `"name`" = value }."
 }
 
-$alias = (Get-Content -Raw -Path $tierPath | ConvertFrom-Json).server.alias
+$alias = @((Get-Content -Raw -Path $tierPath | ConvertFrom-Json).models)[0].alias
 $engineFlags = @(& $basalt --help 2>&1 | ForEach-Object { [regex]::Matches("$_", "--[a-z0-9-]+") } | ForEach-Object { $_.Value })
 
 $runPath = Join-Path $PSScriptRoot ".tmp\bench\experiment-$(Get-Date -Format 'yyyy-MM-dd_HHmm')"

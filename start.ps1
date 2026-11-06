@@ -73,7 +73,7 @@ if (!$tier) {
     }
 }
 
-$model = (Get-Content -Raw -Path $configPath | ConvertFrom-Json).server.model
+$model = @((Get-Content -Raw -Path $configPath | ConvertFrom-Json).models)[0].model
 
 if (-not $model -or -not (Test-Path -Path $model)) {
     throw "The tier file's model '${model}' does not exist. Build it as README.md -> Model pack says."

@@ -12,9 +12,10 @@ one stays on ai_strata.
 
 ## Tier files
 
-- A tier file is a Basalt config for `basalt serve --config`: a `server` and an `engine` block.
+- A tier file is a version 2 Basalt config for `basalt serve --config`: `"version": 2`, one entry
+  in `models` (the model and what belongs to it), an `engine` block and a `server` block.
   Name it `<model>.<quant>.<VRAM>_VRAM_<RAM>_RAM.json`, after the hardware, never after a machine.
-- `server.model` stays absolute. Other relative paths resolve inside `vendor/basalt`.
+- `models[0].model` stays absolute. Other relative paths resolve inside `vendor/basalt`.
 - `"host": "0.0.0.0"` without an API key is deliberate: other devices use the server, and
   Basalt only warns about the missing key. Do not narrow the host, and do not add a key.
 - `alias` keeps the model name of the matching ai_strata tier, so clients work with either server.
