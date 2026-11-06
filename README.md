@@ -32,17 +32,17 @@ server at a time.
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `1b3f6964` | 76.0 tok/s  | 3365 tok/s | 107.2 tok/s  | 71.1 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `ca7d0741` | 74.7 tok/s  | 3421 tok/s | 101.2 tok/s  | 71.0 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.9     | 74.7 tok/s  | 2780 tok/s | 84.4 tok/s   | 69.1 %          |
 
 Both rows ran on driver 597.30, on the migrated version 2 pack, one server at a time. The
-`a04edb96` row it replaces gave 77.5 tok/s chat decode, 3307 tok/s 16K prompt, 99.3 tok/s agent
-decode and 71.1 % cache hit. The change is within the noise: chat decode spans 72.2-78.7 tok/s
-over the requests of this row and 73.8-82.0 tok/s on `a04edb96`, whose second run the same day
-gave a median of 70.8 tok/s; agent decode spans 88.5-133.3 tok/s against 74.7-135.7 tok/s, and
-16K prompt reads 2 % higher, which is not called a gain. Without `"ple-io": "ram"` the first
-prompt after start reads at about 2090 tok/s. Agent decode varies by turn and by run: the medians
-of this row's three runs span 96.5-121.7 tok/s.
+`1b3f6964` row it replaces gave 76.0 tok/s chat decode, 3365 tok/s 16K prompt, 107.2 tok/s agent
+decode and 71.1 % cache hit. The change is within the noise: chat decode spans 70.0-77.1 tok/s
+over the requests of this row and 72.2-78.7 tok/s on `1b3f6964`; agent decode spans
+88.2-124.8 tok/s against 88.5-133.3 tok/s, and its median lies inside the 96.5-121.7 tok/s that
+the medians of three `1b3f6964` runs spanned; 16K prompt reads 2 % higher, which is not called a
+gain. Without `"ple-io": "ram"` the first prompt after start reads at about 2090 tok/s. Agent
+decode varies by turn and by run.
 
 ## Try other engine settings
 
