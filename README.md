@@ -38,13 +38,13 @@ server at a time.
 The Basalt row ran on driver 621.14, the Strata row on 597.30. The `ca7d0741` row it replaces gave
 74.7 tok/s chat decode, 3421 tok/s 16K prompt and 101.2 tok/s agent decode. Run again in the same
 session, on the same pack and driver, the first benchmark after start gave chat decode 74.6 tok/s
-on `ca7d0741` and 69.0 and 66.0 tok/s on two starts of `f19f69e6`, and chat first token
-0.42 s against 0.47-0.52 s. So `f19f69e6` may decode chat 7-12 % slower and answer about 0.07 s
-later, which three starts do not settle. A second benchmark on the same server reads chat decode
-at 54-70 tok/s on both commits, so only the first after start is compared. 16K prompt
-(3400-3494 tok/s) and agent decode (96-120 tok/s) do not differ between the two. Without
-`"ple-io": "ram"` the first prompt after start reads at about 2090 tok/s. Agent decode varies by
-turn and by run.
+on `ca7d0741` and 69.0 and 66.0 tok/s on two starts of `f19f69e6`. No `f19f69e6` run passed
+70.4 tok/s, and every one answered a chat question in 0.47-0.52 s against 0.42 s, reading its
+short prompt about 55 ms slower. So `f19f69e6` likely decodes chat 6-12 % slower and answers about
+0.06 s later. Later benchmarks on the same server read chat decode anywhere in 54-70 tok/s on both
+commits, above or below the first, so they are not compared. 16K prompt (3400-3508 tok/s) and agent
+decode (96-120 tok/s) do not differ between the two. Without `"ple-io": "ram"` the first prompt
+after start reads at about 2090 tok/s. Agent decode varies by turn and by run.
 
 ## Try other engine settings
 
