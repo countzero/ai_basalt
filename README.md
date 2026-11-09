@@ -116,8 +116,10 @@ ai_strata's.
    `.basalt` version names its migration in `vendor\basalt\tools\migrations\`: migrate the pack,
    do not re-convert it, and keep room for a second copy of the file; the weights are copied byte
    for byte. A start that refuses a tier file's config version names its migration there too: run
-   it on every tier file and replace the tier file with its output, under the same name. The
-   benchmark writes to
+   it on every tier file and replace the tier file with its output, under the same name. A start
+   that stops with `merge 0 names a token outside the vocabulary: 'Ġ Ġ\r'` means a pack converted
+   before Basalt `6749fc77`, whose tokenizer has Windows line endings: convert it again as *Model
+   pack* says, with `--force`. The benchmark writes to
    `.tmp\bench\basalt-<commit>\` and prints the numbers for *Tiers*; `-compare .tmp\bench\<older
    folder>` puts an earlier run beside it, also one of ai_strata. VRAM taken by other programs
    lowers the numbers: when they differ from the old row, run the old commit in the same session
