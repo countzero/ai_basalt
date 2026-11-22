@@ -7,11 +7,10 @@
       "gpu": "0",
       "vision": "dynamic",
       "max-context": 262144,
-      "kv": "fp16"
+      "kv": "fp8"
     }
   ],
   "engine": {
-    "vram-reserve-mib": 1536,
     "conversation-cache-mib": 16384,
     "conversation-cache-slots": 4
   },

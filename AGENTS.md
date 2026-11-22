@@ -1,9 +1,9 @@
 # AGENTS.md
 
 Shares one Basalt setup between machines: Basalt as the submodule `vendor/basalt`, pinned to a
-commit of upstream's `main`, and one run config per hardware tier in `presets/`. Basalt publishes
-no tags, releases or ready-made engines, so `update_basalt.ps1` moves the submodule to a commit and
-builds the engine here; `start.ps1` starts the server with a tier file; `benchmark.ps1` measures
+commit of upstream's `main`, and one run config per hardware tier in `presets/`. Basalt tags a
+release only now and then and fixes much between them, so `update_basalt.ps1` moves the submodule
+to a commit of `main` and builds the engine here; `start.ps1` starts the server with a tier file; `benchmark.ps1` measures
 the running server. `README.md` -> *Usage* holds the start command, the other sections the steps
 for a new machine, the model pack and the update procedure.
 

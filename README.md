@@ -35,7 +35,7 @@ server at a time.
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a388da24` | 73.0 tok/s  | 3464 tok/s | 97.9 tok/s   | 71.1 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.9     | 74.7 tok/s  | 2780 tok/s | 84.4 tok/s   | 69.1 %          |
-| `inkling-2-mini.nvfp4-q8.24GB_VRAM_192GB_RAM`              | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a388da24` | 135.7 tok/s | 3637 tok/s | 131.2 tok/s  | 69.3 %          |
+| `inkling-2-mini.nvfp4-q8.24GB_VRAM_192GB_RAM`              | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a388da24` | 149.3 tok/s | 4731 tok/s | 143.8 tok/s  | 69.3 %          |
 
 The Basalt rows ran on driver 621.14, the Strata row on 597.30. The `f19f69e6` row the Qwen row
 replaces gave 69.0 tok/s chat decode, 3400 tok/s 16K prompt and 119.9 tok/s agent decode. Agent
@@ -44,12 +44,17 @@ earlier ones), so its drop is not a regression; the others did not fall. The fir
 start is the one recorded: later ones on the same server read chat decode anywhere in 54-70 tok/s.
 Without `"ple-io": "ram"` the first prompt after start reads at about 2090 tok/s.
 
-The Inkling tier keeps 276 of its 3,072 experts (1.5 GiB) in RAM even on a short chat: at
-`max-context` 262144 the card also holds the reserve, 1.37 GiB for the image encoder and 840 MiB of
-prompt staging. Its prompts read at about 3,600 tok/s at 4K and 16K alike, a quarter of what
-upstream measures on an RTX 5090 with every expert on the card (12,310 tok/s at 16K); whether the
-experts in RAM or the smaller card cost it is not measured. It re-reads 325 tokens per agent
-session, Qwen 5.
+The Inkling tier runs `kv fp8`. Against `fp16` (`experiment.ps1`, 5 runs, same session) it read
+16K prompts at 4703 instead of 3641 tok/s, decoded agent turns at 158.1 instead of 136.5 tok/s and
+answered a chat question in 0.18 instead of 0.49 s. With `fp16` the engine plans for the full
+context and keeps 276 of the 3,072 experts in RAM, so every 4,096-token prompt chunk copies them
+over the bus again; with `fp8` every expert sits on the card until a conversation's caches need the
+room. Upstream measured no quality figure for `fp8`; it finds needles at 131K and 400K with it. A
+shorter context gains little more: `max-context` 131072 and 65536, the latter without any expert
+in RAM, read 16K prompts at 4814 and 4850 tok/s, so prompts top out near 4,800 tok/s on this card
+(an RTX 5090 reads 12,310). `spec 4` and `vram-reserve-mib`, which Inkling does not read, changed
+nothing. Inkling re-reads 325 tokens per agent session, Qwen 5: the benchmark cuts each reply at
+64 tokens and sends no thinking back, so the server cannot continue the turn it left.
 
 ## Try other engine settings
 
