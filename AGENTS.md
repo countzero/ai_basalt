@@ -19,6 +19,8 @@ one stays on ai_strata.
 - `"host": "0.0.0.0"` without an API key is deliberate: other devices use the server, and
   Basalt only warns about the missing key. Do not narrow the host, and do not add a key.
 - `alias` keeps the model name of the matching ai_strata tier, so clients work with either server.
+  A tier without one (Strata runs only Qwen3.8-Flash-Next) takes `<model>-<quant>` from its own
+  file name.
 - `port` stays out: `start.ps1` sets it (default 8084, next to ai_strata's 8083). Basalt stops at startup
   on an unknown key or a key in the wrong block, so check a new key against
   `vendor/basalt/docs/configuration/index.md` before adding it.

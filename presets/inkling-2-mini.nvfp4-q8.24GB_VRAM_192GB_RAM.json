@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "models": [
+    {
+      "model": "E:\\AI\\LLM\\gguf\\Inkling-2-Mini\\basalt\\Inkling-2-Mini-NVFP4-q8.basalt",
+      "alias": "inkling-2-mini-nvfp4-q8",
+      "gpu": "0",
+      "vision": "dynamic",
+      "max-context": 262144,
+      "kv": "fp16"
+    }
+  ],
+  "engine": {
+    "vram-reserve-mib": 1536,
+    "conversation-cache-mib": 16384,
+    "conversation-cache-slots": 4
+  },
+  "server": {
+    "host": "0.0.0.0"
+  }
+}

@@ -1,9 +1,9 @@
 # ai_basalt
 
 My [Basalt](https://github.com/jesdga95/basalt) setup, shared between machines: Basalt pinned as a
-submodule, plus one run config per hardware tier. It mirrors
-[ai_strata](https://github.com/countzero/ai_strata) for the same model, so both servers can be
-compared on one machine. Basalt runs only on NVIDIA Blackwell cards (sm_120). Model files live
+submodule, plus one run config per hardware tier. For Qwen3.8-Flash-Next it mirrors
+[ai_strata](https://github.com/countzero/ai_strata), so both servers can be compared on one
+machine; Inkling 2 Mini runs only here. Basalt runs only on NVIDIA Blackwell cards (sm_120). Model files live
 outside the repository; each tier file names their paths.
 
 ## Usage
@@ -18,7 +18,8 @@ pwsh -NoExit -File <repo>\start.ps1
 `-tier <tier>`. `start.ps1` checks that the engine is built, that the tier file's model exists and
 that port 8084 is free; it never stops another server on it. ai_strata keeps port 8083, and each
 tier file reports the model name of the matching ai_strata tier (`alias`), so a client switches
-servers by its port alone. A tier file sets `"host": "0.0.0.0"`, so every device
+servers by its port alone. A tier without one reports `<model>-<quant>` from its file name, such as
+`inkling-2-mini-nvfp4-q8`. A tier file sets `"host": "0.0.0.0"`, so every device
 on the network can use the server. A tier file sets no API key: clients need none, and the server
 warns about it once at start. Images from other devices must come as base64 `data:` URLs; an image
 URL or file path from them gets a 400 unless its host is listed in `image-url-host` or its folder
@@ -32,19 +33,23 @@ server at a time.
 
 | Tier file                                                  | Hardware                                                  | Server            | Chat decode | 16K prompt | Agent decode | Agent cache hit |
 | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------- | ----------- | ---------- | ------------ | --------------- |
-| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `f19f69e6` | 69.0 tok/s  | 3400 tok/s | 119.9 tok/s  | 71.1 %          |
+| `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a388da24` | 73.0 tok/s  | 3464 tok/s | 97.9 tok/s   | 71.1 %          |
 | `qwen3.8-flash-next.unsloth-ud-iq4_xs.24GB_VRAM_192GB_RAM` | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Strata v0.2.9     | 74.7 tok/s  | 2780 tok/s | 84.4 tok/s   | 69.1 %          |
+| `inkling-2-mini.nvfp4-q8.24GB_VRAM_192GB_RAM`              | RTX PRO 5000 Blackwell Laptop 24 GB, 192 GB RAM, 24 cores | Basalt `a388da24` | 135.7 tok/s | 3637 tok/s | 131.2 tok/s  | 69.3 %          |
 
-The Basalt row ran on driver 621.14, the Strata row on 597.30. The `ca7d0741` row it replaces gave
-74.7 tok/s chat decode, 3421 tok/s 16K prompt and 101.2 tok/s agent decode. Run again in the same
-session, on the same pack and driver, the first benchmark after start gave chat decode 74.6 tok/s
-on `ca7d0741` and 69.0 and 66.0 tok/s on two starts of `f19f69e6`. No `f19f69e6` run passed
-70.4 tok/s, and every one answered a chat question in 0.47-0.52 s against 0.42 s, reading its
-short prompt about 55 ms slower. So `f19f69e6` likely decodes chat 6-12 % slower and answers about
-0.06 s later. Later benchmarks on the same server read chat decode anywhere in 54-70 tok/s on both
-commits, above or below the first, so they are not compared. 16K prompt (3400-3508 tok/s) and agent
-decode (96-120 tok/s) do not differ between the two. Without `"ple-io": "ram"` the first prompt
-after start reads at about 2090 tok/s. Agent decode varies by turn and by run.
+The Basalt rows ran on driver 621.14, the Strata row on 597.30. The `f19f69e6` row the Qwen row
+replaces gave 69.0 tok/s chat decode, 3400 tok/s 16K prompt and 119.9 tok/s agent decode. Agent
+decode varies by turn and by run (63-156 tok/s within this run, 96-120 tok/s as the median of
+earlier ones), so its drop is not a regression; the others did not fall. The first benchmark after
+start is the one recorded: later ones on the same server read chat decode anywhere in 54-70 tok/s.
+Without `"ple-io": "ram"` the first prompt after start reads at about 2090 tok/s.
+
+The Inkling tier keeps 276 of its 3,072 experts (1.5 GiB) in RAM even on a short chat: at
+`max-context` 262144 the card also holds the reserve, 1.37 GiB for the image encoder and 840 MiB of
+prompt staging. Its prompts read at about 3,600 tok/s at 4K and 16K alike, a quarter of what
+upstream measures on an RTX 5090 with every expert on the card (12,310 tok/s at 16K); whether the
+experts in RAM or the smaller card cost it is not measured. It re-reads 325 tokens per agent
+session, Qwen 5.
 
 ## Try other engine settings
 
@@ -79,10 +84,15 @@ its `bin\x64` on the PATH, Python 3.10 or newer, and PowerShell 7.
 
 ## Model pack
 
-Basalt reads one `.basalt` file per model. Its official packs have no UD-IQ4_XS, so the tier
-converts Unsloth's GGUF, which ai_strata already uses, with the drafter, draft vocabulary and expert
-profile from the official repository. The experts are copied byte for byte, so the quality is
-ai_strata's.
+Basalt reads one `.basalt` file per model and loads no GGUF: a tier's pack is converted here or
+downloaded.
+
+### Qwen3.8-Flash-Next
+
+The tier converts Unsloth's GGUF, which ai_strata already uses, with the drafter, draft vocabulary
+and expert profile from the official repository. The experts are copied byte for byte, so the
+quality is ai_strata's. When the tier was set up the official packs had no UD-IQ4_XS; Basalt
+`46f1e3ff` added one (`jesdga/Qwen3.8-Flash-Next-Basalt`), not yet compared with this pack.
 
 1. Download the converter inputs (about 6 GiB) next to the GGUF:
 
@@ -103,6 +113,38 @@ ai_strata's.
    slower than an official one, which it says of a pack without the official drafter; this one
    copies it. The expert profile is no longer a converter input: the engine ships it as
    `data\profiles\qwen4exp-48x512.prof`.
+
+### Inkling 2 Mini
+
+Thinking Machines released Inkling 2 Mini only in NVFP4 and MXFP8, the precision it was trained
+in; there are no BF16 weights. The converter keeps the NVFP4 experts of layers 0-19 bit for bit,
+rounds the MXFP8 experts of layers 20-23 and the attention projections to Q8_0, and takes the
+drafter, vision encoder, tokenizer and template from the release: no other input. Needs Basalt
+0.5.5 (`ff0b978d`) or later.
+
+1. Download the release (20.2 GB, 14 files) at its first commit, which the official pack was built
+   from, into a folder named `Inkling-2-Mini`, whose name the pack records:
+
+   ```
+   hf download thinkingmachines/Inkling-2-Mini --revision 1fb4134b9a74f9681054f4ef82e4bf1f458a2337 --local-dir <models>\Inkling-2-Mini
+   ```
+
+   Not with `git clone`: Git for Windows sets `core.autocrlf=true` and writes the release's text
+   files, the chat template among them, with Windows line endings, which the converter copies into
+   the pack. A clone needs `git -c core.autocrlf=false clone`.
+
+2. Convert (18.4 GiB, about 2.5 minutes). The converter puts its temporary files in `%TEMP%`. In
+   `vendor\basalt`:
+
+   ```
+   $env:TEMP = $env:TMP = (New-Item -ItemType Directory -Force <repo>\.tmp\convert).FullName
+   .\.venv\Scripts\python.exe tools\convert\convert.py --checkpoint <models>\Inkling-2-Mini --name "Inkling 2 Mini" --out <models>\basalt\Inkling-2-Mini-NVFP4-q8.basalt
+   ```
+
+The pack is then byte for byte the official one, `jesdga/Inkling-2-Mini-Basalt` (SHA-256
+`f7b4e5f8e17681c4735a7dfc51ffd8e805c44184fad4e1778b13187d79dc3787`), so downloading that gives the
+same file. The release's next commit, `ed40e7da`, only adds `"dtype"` to `config.json`, which the
+converter does not read but records in `meta`: from it the file hash differs.
 
 ## Update Basalt
 
